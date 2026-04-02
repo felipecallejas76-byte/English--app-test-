@@ -1,73 +1,26 @@
-import path from "path";
-import { fileURLToPath } from "url";
-const __filename = fileURLToPath(import.meta.url));
-const __dirname = path.dirname(__filename);
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
-app.use(express.static(__dirname));
 app.use(cors());
 app.use(express.json());
 
-// “Base de datos” temporal (en memoria)
-let users = [];
+// Necesario para rutas
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-/* =========================
-   REGISTRO
-========================= */
-app.post("/register", (req, res) => {
-  const { email, password } = req.body;
+// Servir archivos estáticos
+app.use(express.static(__dirname));
 
-  const exists = users.find(u => u.email === email);
-  if (exists) return res.json({ success: false, message: "Usuario ya existe" });
-
-  users.push({
-    email,
-    password,
-    progress: 0,
-    streak: 0
-  });
-
-  res.json({ success: true });
+// Ruta principal (frontend)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-/* =========================
-   LOGIN
-========================= */
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-
-  const user = users.find(
-    u => u.email === email && u.password === password
-  );
-
-  if (!user) {
-    return res.json({ success: false });
-  }
-
-  res.json({ success: true, user });
-});
-
-/* =========================
-   GUARDAR PROGRESO
-========================= */
-app.post("/progress", (req, res) => {
-  const { email, progress } = req.body;
-
-  const user = users.find(u => u.email === email);
-
-  if (!user) return res.json({ success: false });
-
-  user.progress = progress;
-
-  res.json({ success: true });
-});
-
-/* =========================
-   IA (OpenAI PROXY)
-========================= */
+// Ruta IA
 app.post("/ai", async (req, res) => {
   const { text } = req.body;
 
@@ -81,14 +34,8 @@ app.post("/ai", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          {
-            role: "system",
-            content: "Eres un profesor de inglés. Corrige y explica errores."
-          },
-          {
-            role: "user",
-            content: text
-          }
+          { role: "system", content: "Eres un profesor de inglés." },
+          { role: "user", content: text }
         ]
       })
     });
@@ -96,30 +43,16 @@ app.post("/ai", async (req, res) => {
     const data = await response.json();
 
     res.json({
-      success: true,
-      result: data.choices?.[0]?.message?.content || "Error"
+      result: data.choices?.[0]?.message?.content || "Error en IA"
     });
 
   } catch (error) {
-    res.json({ success: false, error: "Fallo IA" });
+    res.json({ result: "Error del servidor" });
   }
 });
 
-/* =========================
-   PAYPAL (PLACEHOLDER)
-========================= */
-app.post("/create-order", (req, res) => {
-  // Aquí luego conectas PayPal real
-  res.json({ id: "FAKE_ORDER_ID" });
-});
+const PORT = process.env.PORT || 3000;
 
-/* =========================
-   SERVER
-========================= */
-const PORT = process.env.PORT || 3001;
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log("Servidor corriendo en puerto " + PORT);
 });

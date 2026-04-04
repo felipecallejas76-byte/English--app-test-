@@ -42,17 +42,15 @@ app.post("/ai", async (req, res) => {
 
     const data = await response.json();
 
+    console.log("OPENAI RESPONSE:", data); // 👈 para ver error en logs
+
     res.json({
-      res.json({
-  result: data.choices?.[0]?.message?.content || JSON.stringify(data)
-});
+      result: data.choices?.[0]?.message?.content || "Error IA"
+    });
+
   } catch (error) {
+    console.error(error);
     res.json({ result: "Error del servidor" });
   }
 });
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("Servidor corriendo en puerto " + PORT);
-});
+  

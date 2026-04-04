@@ -43,9 +43,9 @@ app.post("/ai", async (req, res) => {
     const data = await response.json();
 
     res.json({
-      result: data.choices?.[0]?.message?.content || "Error en IA"
-    });
-
+      res.json({
+  result: data.choices?.[0]?.message?.content || JSON.stringify(data)
+});
   } catch (error) {
     res.json({ result: "Error del servidor" });
   }
